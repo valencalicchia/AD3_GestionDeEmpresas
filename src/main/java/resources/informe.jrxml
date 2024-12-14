@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" 
+	name="ListadoDepartamentos" 
+	pageWidth="595" 
+	pageHeight="842" 
+	columnWidth="555" 
+	leftMargin="20" 
+	rightMargin="20" 
+	topMargin="20" 
+	bottomMargin="20">
+
+	<parameter name="titulo" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="autor" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="fecha" class="java.lang.String" isForPrompting="false"/>
+	<queryString>
+		<![CDATA[WITH EmployeeSalaries AS (
+    SELECT 
+        e.coddepart,
+        e.nombre AS emp_nombre,
+        o.salariomes + (FLOOR((EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM e.fechaalta)) / 3)) * o.preciotrienio AS salario
+    FROM EMPLEADOS e
+    JOIN OFICIOS o ON e.codoficio = o.codoficio
+)
+SELECT 
+    d.coddepart AS dept_no,
+    d.nombre AS dnombre,
+    d.localidad AS loc,
+    COUNT(e.codemple) AS num_emple,
+    NVL(ROUND(AVG(es.salario), 2), 0) AS media_salario,  -- Aplicar ROUND para limitar a 2 decimales
+    NVL(MAX(es.emp_nombre), '*Sin empleados*') AS empleado_max_salario
+FROM DEPARTAMENTOS d
+LEFT JOIN EMPLEADOS e ON d.coddepart = e.coddepart
+LEFT JOIN EmployeeSalaries es ON e.coddepart = es.coddepart
+GROUP BY 
+    d.coddepart,
+    d.nombre,
+    d.localidad
+ORDER BY d.coddepart]]>
+	</queryString>
+	<field name="dept_no" class="java.lang.Integer"/>
+	<field name="dnombre" class="java.lang.String"/>
+	<field name="loc" class="java.lang.String"/>
+	<field name="num_emple" class="java.lang.Integer"/>
+	<field name="media_salario" class="java.lang.Double"/>
+	<field name="empleado_max_salario" class="java.lang.String"/>
+	<title>
+		<band height="70">
+			<textField>
+				<reportElement x="0" y="10" width="555" height="40"/>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["LISTADO DE LOS DEPARTAMENTOS DE LA EMPRESA."]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="50" width="550" height="20"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA["Realizado por: " + $P{autor} + " on " + $P{fecha}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="40">
+			<rectangle>
+				<reportElement x="0" y="0" width="550" height="35"/>
+			</rectangle>
+			<staticText>
+				<reportElement x="0" y="5" width="50" height="25"/>
+				<text><![CDATA[Código depart]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="60" y="5" width="100" height="25"/>
+				<text><![CDATA[Nombre departamento]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="5" width="80" height="25"/>
+				<text><![CDATA[Localidad]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="5" width="60" height="25"/>
+				<text><![CDATA[Num emple]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="5" width="80" height="25"/>
+				<text><![CDATA[Media salario]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="5" width="140" height="25"/>
+				<text><![CDATA[Empleado con más salario]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20">
+			<textField>
+				<reportElement x="0" y="2" width="50" height="15"/>
+				<textFieldExpression><![CDATA[$F{dept_no}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="60" y="2" width="100" height="15"/>
+				<textFieldExpression><![CDATA[$F{dnombre}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="160" y="2" width="80" height="15"/>
+				<textFieldExpression><![CDATA[$F{loc}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="240" y="2" width="60" height="15"/>
+				<textFieldExpression><![CDATA[$F{num_emple}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="300" y="2" width="80" height="15"/>
+				<textFieldExpression><![CDATA[String.format("%.2f", $F{media_salario})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="380" y="2" width="140" height="15"/>
+				<textFieldExpression><![CDATA[$F{empleado_max_salario}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="55">
+			<line>
+				<reportElement positionType="FixRelativeToBottom" x="0" y="0" width="555" height="2"/>
+				<graphicElement>
+					<pen lineWidth="1.5" lineColor="#FF0000"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="0" y="10" width="280" height="31"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER} + " de"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="280" y="10" width="275" height="30"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[" " +$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="30">
+			<rectangle>
+				<reportElement x="0" y="0" width="555" height="25"/>
+			</rectangle>
+			<textField>
+				<reportElement x="10" y="5" width="300" height="15"/>
+				<textElement textAlignment="Left"/>
+				<textFieldExpression><![CDATA["Total Registros: " + $V{REPORT_COUNT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>
